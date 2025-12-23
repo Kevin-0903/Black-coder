@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Traffic AI — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#0b1220;
+    --muted:#9aa7bd;
+    --accent:#00c2a8;
+    --danger:#ff6b6b;
+    --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+    --green:#28c76f;
+    --yellow:#ffd166;
+    --red:#ef476f;
+    --glass-border: rgba(255,255,255,0.04);
+    --glass-strong: rgba(255,255,255,0.06);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color-scheme: dark;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    background:
+      radial-gradient(800px 400px at 10% 10%, rgba(0,194,168,0.06), transparent),
+      linear-gradient(180deg, #071022 0%, #071428 100%);
+    color:#e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .app {
+    max-width:1200px;
+    margin:28px auto;
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:20px;
+    padding:20px;
+  }
+
+  /* Left column */
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    border:1px solid var(--glass-border);
+    border-radius:12px;
+    padding:16px;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+    min-height:120px;
+  }
+
+  .camera-wrap {
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+  }
+
+  .video-card {
+    flex:1;
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--card);
+    border:1px solid var(--glass-2);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    min-height:360px;
+  }
+
+  video#liveVideo {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    background: linear-gradient(180deg,#08121a,#041018);
+  }
+
+  .video-overlay {
+    position:absolute;
+    left:12px;
+    top:12px;
+    background:rgba(0,0,0,0.45);
+    color:#fff;
+    padding:6px 10px;
+    border-radius:8px;
+    font-weight:600;
+    font-size:13px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .controls {
+    display:flex;
+    gap:8px;
+    padding:12px;
+    align-items:center;
+  }
+  .btn {
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid var(--glass-border);
+    color:var(--muted);
+    padding:8px 10px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:13px;
+  }
+  .btn.primary { color:white; border-color:rgba(0,194,168,0.18); box-shadow:0 4px 10px rgba(0,194,168,0.06); }
+  .btn.warn { border-color: rgba(255,107,107,0.12); color:var(--danger); }
+  .btn:active { transform:translateY(1px); }
+
+  /* Right column */
+  .right-grid {
+    display:grid;
+    grid-template-rows:auto auto 1fr;
+    gap:16px;
+  }
+
+  .lane-grid {
+    display:grid;
+    grid-template-columns: repeat(2,1fr);
+    gap:12px;
+  }
+
+  .lane {
+    background:var(--card);
+    padding:12px;
+    border-radius:10px;
+    border:1px solid var(--glass-border);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .lane .head {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .lane .title { font-weight:700; font-size:14px; }
+  .lane .counts { color:var(--muted); font-size:13px; }
+
+  .progress {
+    height:12px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:8px;
+    overflow:hidden;
+    border:1px solid var(--glass-2);
+  }
+  .progress > i {
+    display:block;
+    height:100%;
+    background:linear-gradient(90deg, var(--accent), #27a58f);
+    width:0%;
+    transition:width 450ms linear;
+  }
+
+  .signal-pill {
+    display:flex;
+    gap:6px;
+    align-items:center;
+    font-weight:700;
+  }
+  .signal-dot {
+    width:14px;height:14px;border-radius:50%;
+    background:#2b3440;border:1px solid rgba(255,255,255,0.03);
+  }
+  .signal-dot.green { background:var(--green); box-shadow:0 0 10px rgba(40,199,111,0.16); }
+  .signal-dot.yellow { background:var(--yellow); box-shadow:0 0 8px rgba(255,209,102,0.08); }
+  .signal-dot.red { background:var(--red); box-shadow:0 0 8px rgba(239,71,111,0.06); }
+
+  .center {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:14px;
+    border-radius:10px;
+  }
+
+  .timer {
+    width:140px;
+    height:140px;
+    border-radius:50%;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--glass-border);
+    flex-direction:column;
+  }
+  .timer h2 { margin:0;font-size:36px; }
+  .timer p { margin:0; color:var(--muted); font-size:13px; }
+
+  .violation-card {
+    background:var(--card);
+    border-radius:10px;
+    padding:12px;
+    border:1px solid var(--glass-border);
+    min-height:120px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .violations-list {
+    display:grid;
+    gap:10px;
+    max-height:360px;
+    overflow:auto;
+    padding-right:6px;
+  }
+  .vio {
+    display:flex;
+    gap:10px;
+    align-items:center;
+    border-radius:8px;
+    padding:8px;
+    border:1px solid rgba(255,255,255,0.02);
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
+  }
+  .vio img { width:96px;height:64px;object-fit:cover;border-radius:6px;flex:0 0 96px; }
+  .vio .meta { flex:1; display:flex;flex-direction:column; gap:4px; }
+  .vio .meta .plate { font-weight:700; font-size:15px; }
+  .vio .meta .time { color:var(--muted);font-size:13px; }
+
+  /* settings */
+  .settings {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    border-radius:10px;
+    border:1px solid var(--glass-border);
+  }
+  .row { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+  .label { color:var(--muted); font-size:13px; }
+  input[type=number]{
+    background:transparent;border:1px solid rgba(255,255,255,0.03);color:inherit;padding:6px 8px;border-radius:8px;width:84px;text-align:center;
+  }
+
+  footer {
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    margin-top:18px;
+  }
+
+  /* tiny helpers */
+  .muted { color:var(--muted); font-size:13px; }
+  .flex { display:flex; gap:8px; align-items:center; }
+  .kbd { background:rgba(255,255,255,0.03); padding:4px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.02); font-weight:700; font-size:12px; }
+  
+  @media (max-width:1000px){
+    .app { grid-template-columns: 1fr; padding:14px; }
+    .lane-grid { grid-template-columns: repeat(2,1fr); }
+  }
+
+  @media (max-width:640px){
+    .lane-grid { grid-template-columns: 1fr; }
+    .video-card { min-height:260px; }
+  }
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Left column: Live feed + lane visualization -->
+    <div>
+      <div class="panel video-card" id="video-panel">
+        <div class="video-wrap" style="display:flex;flex-direction:column;height:100%;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <h3 style="margin:0;font-size:18px;">📷 Live Camera Feed</h3>
+              <span class="muted">AI: YOLOvX (vehicle detection)</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div class="kbd" id="statusWS">Simulator</div>
+              <button class="btn" id="btnOpenCamera" title="Open local webcam">Open Webcam</button>
+              <button class="btn primary" id="btnToggleSim">Pause Sim</button>
+            </div>
+          </div>
+
+          <div style="flex:1;display:flex;gap:12px;">
+            <div style="flex:1; display:flex; flex-direction:column;">
+              <!-- video element (can be live stream or MJPEG) -->
+              <video id="liveVideo" autoplay muted playsinline></video>
+              <div class="video-overlay" id="videoOverlay">
+                <span id="overlayTxt">Connected • fps: --</span>
+                <span style="opacity:.6">|</span>
+                <span class="muted" id="modelVer">YOLO: vX</span>
+              </div>
+            </div>
+
+            <!-- right side small controls -->
+            <div style="width:320px; display:flex;flex-direction:column; gap:12px;">
+              <div class="panel" style="padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><strong>Current Green</strong><div class="muted" id="currentLaneName">Lane A</div></div>
+                  <div class="signal-pill" aria-hidden>
+                    <div class="signal-dot green" id="signalDot"></div>
+                    <div class="muted" id="laneVehicleSummary">Cars: 12 • Bikes: 6</div>
+                  </div>
+                </div>
+
+                <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;flex-direction:column;">
+                    <div class="muted">Countdown</div>
+                    <div style="font-weight:800;font-size:20px;" id="countdownTxt">--s</div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;">
+                    <div class="muted">Mode</div>
+                    <div style="font-weight:700" id="modeTxt">Adaptive</div>
+                  </div>
+                </div>
+                <div style="margin-top:12px;display:flex;gap:8px;">
+                  <button class="btn" id="btnManualSkip">Skip Lane</button>
+                  <button class="btn warn" id="btnToggleManual">Manual Override</button>
+                </div>
+              </div>
+
+              <div class="settings">
+                <div class="row">
+                  <div class="label">Min green (s)</div>
+                  <input type="number" id="minGreen" min="5" max="60" value="8">
+                </div>
+                <div class="row">
+                  <div class="label">Max green (s)</div>
+                  <input type="number" id="maxGreen" min="10" max="120" value="40">
+                </div>
+                <div class="row">
+                  <div class="label">Empty-lane early switch</div>
+                  <input type="checkbox" id="emptyEarly" checked>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn primary" id="btnSaveSettings">Save</button>
+                  <button class="btn" id="btnReset">Reset</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- lane cards below video -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;">
+        <!-- lanes A,B,C (example) -->
+        <div class="panel lane" id="laneA">
+          <div class="head">
+            <div>
+              <div class="title">Lane A — Northbound</div>
+              <div class="counts muted" id="laneAcounts">Cars 0 • Bikes 0 • Buses 0</div>
+            </div>
+            <div class="signal-pill"><div class="signal-dot red" id="laneA-dot"></div><div class="muted">0%</div></div>
+          </div>
+          <div class="progress"><i id="laneAbar" style="width:0%"></i></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="muted">Priority</div>
+            <div style="font-weight:700" id="laneApriority">Low</div>
+          </div>
+        </div>
+
+        <div class="panel lane" id="laneB">
+          <div class="head">
+            <div>
+              <div class="title">Lane B — Eastbound</div>
+              <div class="counts muted" id="laneBcounts">Cars 0 • Bikes 0 • Buses 0</div>
+            </div>
+            <div class="signal-pill"><div class="signal-dot red" id="laneB-dot"></div><div class="muted">0%</div></div>
+          </div>
+          <div class="progress"><i id="laneBbar" style="width:0%"></i></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="muted">Priority</div>
+            <div style="font-weight:700" id="laneBpriority">Low</div>
+          </div>
+        </div>
+
+        <div class="panel lane" id="laneC">
+          <div class="head">
+            <div>
+              <div class="title">Lane C — Westbound</div>
+              <div class="counts muted" id="laneCcounts">Cars 0 • Bikes 0 • Buses 0</div>
+            </div>
+            <div class="signal-pill"><div class="signal-dot red" id="laneC-dot"></div><div class="muted">0%</div></div>
+          </div>
+          <div class="progress"><i id="laneCbar" style="width:0%"></i></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="muted">Priority</div>
+            <div style="font-weight:700" id="laneCpriority">Low</div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        Smart Traffic AI — Demo UI • Replace "simulator" with your YOLO backend stream & API. 🔨🤖🔧
+      </footer>
+    </div>
+
+    <!-- Right column: countdown, violations -->
+    <div class="right-grid">
+      <div class="center panel">
+        <div class="timer" id="timerCircle">
+          <h2 id="timerNumber">--</h2>
+          <p id="timerLabel">seconds</p>
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:800;font-size:16px;" id="currentLaneTitle">Lane A — Green</div>
+              <div class="muted" id="lastSwitch">Last switch: --</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="muted">Throughput</div>
+              <div id="throughput" style="font-weight:800;font-size:20px;">0 v/h</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <div class="muted">Traffic breakdown</div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <div style="flex:1;background:var(--glass);border-radius:8px;padding:8px;border:1px solid var(--glass-border);">
+                <div class="muted">Cars</div>
+                <div style="font-weight:800;font-size:18px;" id="totalCars">0</div>
+              </div>
+              <div style="flex:1;background:var(--glass);border-radius:8px;padding:8px;border:1px solid var(--glass-border);">
+                <div class="muted">Bikes</div>
+                <div style="font-weight:800;font-size:18px;" id="totalBikes">0</div>
+              </div>
+              <div style="flex:1;background:var(--glass);border-radius:8px;padding:8px;border:1px solid var(--glass-border);">
+                <div class="muted">Buses</div>
+                <div style="font-weight:800;font-size:18px;" id="totalBuses">0</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel violation-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong>Violations</strong>
+            <div class="muted" style="font-size:13px;">Captured when vehicle crosses stop-line at red</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn" id="btnExportCSV">Export CSV</button>
+            <button class="btn primary" id="btnFakeViolation">Add fake violation</button>
+          </div>
+        </div>
+
+        <div class="violations-list" id="violationsList">
+          <!-- violation items injected here -->
+        </div>
+      </div>
+
+      <div class="panel settings">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong>System Integration</strong>
+          <div class="muted">Connect YOLO / OCR</div>
+        </div>
+        <div class="muted" style="font-size:13px;">
+          Expected incoming WebSocket message formats (JSON):
+          <pre style="white-space:pre-wrap;background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);margin:8px 0;font-size:12px">
+{ "type":"counts", "lane":"A", "counts": { "car":12,"bike":5,"bus":1 }, "ts":1600000000 }
+{ "type":"violation", "lane":"B", "img":"data:image/jpeg;base64,...", "plate":"KA01AB1234", "ts":1600000012 }
+          </pre>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <input id="wsUrl" placeholder="wss://your-backend/ws" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:inherit;">
+          <button class="btn" id="btnConnectWS">Connect</button>
+        </div>
+
+        <div class="muted" style="font-size:13px;">Notes: Use a server that forwards YOLO detection counts and violation events. For live camera streaming, use an MJPEG or WebRTC pipeline into the browser.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  Smart Traffic Dashboard UI
+  - Mock simulator emits 'counts' for lanes and occasional 'violation' events
+  - Replace the simulator by calling connectWS(url) and sending messages in the format shown in the UI
+  - Video: to use local webcam click "Open Webcam"; to use server stream set <video.src> to an MJPEG or HLS / WebRTC source
+*/
+
+(() => {
+  // configuration & state
+  const lanes = ['A','B','C'];
+  const laneMeta = {
+    A: { name: 'Lane A — Northbound', el: {} },
+    B: { name: 'Lane B — Eastbound',  el: {} },
+    C: { name: 'Lane C — Westbound',  el: {} }
+  };
+  let state = {
+    counts: { A: {car:0,bike:0,bus:0}, B:{car:0,bike:0,bus:0}, C:{car:0,bike:0,bus:0} },
+    currentLane: 'A',
+    mode: 'Adaptive',
+    timer: 20,
+    minGreen: 8,
+    maxGreen: 40,
+    emptyEarly: true,
+    manualOverride: false,
+    wsConnected: false,
+    violations: [], // {ts, lane, plate, img}
+  };
+
+  // DOM refs
+  const refs = {
+    liveVideo: document.getElementById('liveVideo'),
+    overlayTxt: document.getElementById('overlayTxt'),
+    modelVer: document.getElementById('modelVer'),
+    statusWS: document.getElementById('statusWS'),
+    btnToggleSim: document.getElementById('btnToggleSim'),
+    btnOpenCamera: document.getElementById('btnOpenCamera'),
+    btnToggleManual: document.getElementById('btnToggleManual'),
+    btnManualSkip: document.getElementById('btnManualSkip'),
+    currentLaneName: document.getElementById('currentLaneName'),
+    laneVehicleSummary: document.getElementById('laneVehicleSummary'),
+    countdownTxt: document.getElementById('countdownTxt'),
+    timerNumber: document.getElementById('timerNumber'),
+    timerLabel: document.getElementById('timerLabel'),
+    currentLaneTitle: document.getElementById('currentLaneTitle'),
+    lastSwitch: document.getElementById('lastSwitch'),
+    throughput: document.getElementById('throughput'),
+    totalCars: document.getElementById('totalCars'),
+    totalBikes: document.getElementById('totalBikes'),
+    totalBuses: document.getElementById('totalBuses'),
+    violationsList: document.getElementById('violationsList'),
+    btnFakeViolation: document.getElementById('btnFakeViolation'),
+    btnExportCSV: document.getElementById('btnExportCSV'),
+    minGreen: document.getElementById('minGreen'),
+    maxGreen: document.getElementById('maxGreen'),
+    emptyEarly: document.getElementById('emptyEarly'),
+    btnSaveSettings: document.getElementById('btnSaveSettings'),
+    btnReset: document.getElementById('btnReset'),
+    btnConnectWS: document.getElementById('btnConnectWS'),
+    wsUrl: document.getElementById('wsUrl'),
+    btnConnect: document.getElementById('btnConnect'),
+    statusDot: document.getElementById('signalDot'),
+    modeTxt: document.getElementById('modeTxt'),
+    btnOpenWS: null
+  };
+
+  // map DOM lane elements
+  lanes.forEach(l => {
+    laneMeta[l].el = {
+      counts: document.getElementById(`lane${l}counts`),
+      bar: document.getElementById(`lane${l}bar`),
+      dot: document.getElementById(`lane${l}-dot`),
+      priority: document.getElementById(`lane${l}priority`)
+    };
+  });
+
+  // Utility
+  const fmtTime = ts => new Date(ts*1000).toLocaleString();
+  const nowSec = () => Math.floor(Date.now()/1000);
+
+  // Re-render UI based on state
+  function renderUI() {
+    // totals
+    const totals = Object.values(state.counts).reduce((acc,c) => {
+      acc.car += c.car; acc.bike += c.bike; acc.bus += c.bus; return acc;
+    }, {car:0,bike:0,bus:0});
+    refs.totalCars.textContent = totals.car;
+    refs.totalBikes.textContent = totals.bike;
+    refs.totalBuses.textContent = totals.bus;
+    refs.modeTxt.textContent = state.mode;
+    refs.currentLaneName.textContent = `${laneMeta[state.currentLane].name}`;
+    refs.currentLaneTitle.textContent = `${laneMeta[state.currentLane].name} — Green`;
+    refs.lastSwitch.textContent = `Last switch: ${fmtTime(nowSec())}`;
+
+    // throughput simple metric (vehicles passed in last minute) — demo randomish:
+    const throughput = Math.max(1, Math.round((totals.car + totals.bike + totals.bus) * 3));
+    refs.throughput.textContent = `${throughput} v/h`;
+
+    // per-lane UI
+    const maxVehicles = Math.max(...lanes.map(l => (state.counts[l].car + state.counts[l].bike + state.counts[l].bus)));
+    lanes.forEach(l => {
+      const c = state.counts[l];
+      const total = c.car + c.bike + c.bus;
+      const pct = maxVehicles === 0 ? 0 : Math.round(total / maxVehicles * 100);
+      laneMeta[l].el.counts.textContent = `Cars ${c.car} • Bikes ${c.bike} • Buses ${c.bus}`;
+      laneMeta[l].el.bar.style.width = pct + '%';
+      laneMeta[l].el.priority.textContent = (total > 8) ? 'High' : (total > 3 ? 'Medium' : 'Low');
+
+      // signal color
+      const dot = laneMeta[l].el.dot;
+      dot.classList.remove('green','yellow','red');
+      if (l === state.currentLane) dot.classList.add('green');
+      else dot.classList.add('red');
+    });
+
+    // countdown
+    refs.countdownTxt.textContent = `${state.timer}s`;
+    refs.timerNumber.textContent = state.timer;
+    refs.timerLabel.textContent = 'seconds left';
+
+    // overlay update
+    refs.overlayTxt.textContent = `Connected • fps: ${Math.round(24 + (Math.random()*4))}`;
+
+    // violations list
+    renderViolations();
+  }
+
+  function renderViolations() {
+    refs.violationsList.innerHTML = '';
+    state.violations.slice().reverse().forEach((v, i) => {
+      const el = document.createElement('div');
+      el.className = 'vio';
+      el.innerHTML = `
+        <img src="${v.img}" alt="violation-${i}">
+        <div class="meta">
+          <div class="plate">${v.plate || '—'}</div>
+          <div class="time muted">${v.lane} • ${new Date(v.ts*1000).toLocaleString()}</div>
+          <div class="muted" style="font-size:12px;margin-top:6px">OCR confidence: ${v.confidence ?? '??'}%</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+          <button class="btn" onclick="downloadViolation(${i})">Download</button>
+          <button class="btn warn" onclick="deleteViolation(${i})">Delete</button>
+        </div>
+      `;
+      refs.violationsList.appendChild(el);
+    });
+    // expose helpers
+    window.downloadViolation = (idxFromNewest) => {
+      // idxFromNewest: zero-based index into reversed list
+      const idx = state.violations.length - 1 - idxFromNewest;
+      if (idx<0) return;
+      const v = state.violations[idx];
+      const a = document.createElement('a');
+      a.href = v.img;
+      a.download = `violation_${v.plate || 'unknown'}_${v.ts}.jpg`;
+      a.click();
+    };
+    window.deleteViolation = (idxFromNewest) => {
+      const idx = state.violations.length - 1 - idxFromNewest;
+      if (idx<0) return;
+      state.violations.splice(idx,1);
+      renderViolations();
+    };
+  }
+
+  // Timer / signal switching logic
+  let tickInterval = null;
+  function startClock(){
+    if(tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(() => {
+      if (state.manualOverride) return; // paused by manual override
+      // decrement
+      if (state.timer > 0) {
+        state.timer--;
+        // if lane becomes empty and emptyEarly is enabled, switch early
+        if (state.emptyEarly) {
+          const counts = state.counts[state.currentLane];
+          const total = counts.car + counts.bike + counts.bus;
+          if (total === 0 && state.timer > 3) {
+            // early switch
+            state.timer = 1;
+          }
+        }
+      }
+      if (state.timer <= 0) {
+        // pick next lane based on counts (adaptive)
+        const next = pickNextLane();
+        switchToLane(next);
+      }
+      renderUI();
+    }, 1000);
+  }
+
+  function pickNextLane(){
+    // choose lane with highest weighted count, exclude current if low
+    const scores = lanes.map(l => {
+      const c = state.counts[l];
+      return { lane:l, score: c.car*1 + c.bike*0.6 + c.bus*1.6 + (l === state.currentLane ? -1.2 : 0) };
+    });
+    scores.sort((a,b)=>b.score-a.score);
+    // if top has zero score, just cycle
+    if (scores[0].score <= 0) {
+      const idx = lanes.indexOf(state.currentLane);
+      return lanes[(idx+1) % lanes.length];
+    }
+    return scores[0].lane;
+  }
+
+  function switchToLane(lane){
+    const total = state.counts[lane].car + state.counts[lane].bike + state.counts[lane].bus;
+    // green time proportional to count, bounded
+    const base = Math.min(state.maxGreen, Math.max(state.minGreen, Math.round(total * 3 + 6)));
+    state.currentLane = lane;
+    state.timer = base;
+    state.lastSwitch = nowSec();
+    // update signal dot
+    lanes.forEach(l => {
+      const d = laneMeta[l].el.dot;
+      d.classList.remove('green','red');
+      d.classList.add(l===lane ? 'green' : 'red');
+    });
+    renderUI();
+  }
+
+  // Violations handling
+  function addViolation(data){
+    // expected data: {lane, img (dataURL), plate, ts, confidence}
+    const v = {
+      lane: data.lane || '--',
+      img: data.img || placeholderImageDataURL(),
+      plate: data.plate || 'UNKNOWN',
+      ts: data.ts || nowSec(),
+      confidence: (data.confidence !== undefined) ? data.confidence : Math.round(70 + Math.random()*20)
+    };
+    state.violations.push(v);
+    // limit stored violations
+    if (state.violations.length > 200) state.violations.shift();
+    renderViolations();
+  }
+
+  // CSV export
+  function exportViolationsCSV(){
+    const rows = [
+      ['ts','lane','plate','confidence']
+    ];
+    state.violations.forEach(v => rows.push([v.ts, v.lane, v.plate, v.confidence]));
+    const csv = rows.map(r => r.map(cell=>`"${(''+cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `violations_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // placeholder image (simple colored base64) for fake violations
+  function placeholderImageDataURL(){
+    // small 320x200 SVG base64 to simulate image
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='640' height='400'>
+      <rect width='100%' height='100%' fill='#111827'/>
+      <text x='50%' y='50%' font-size='32' fill='#9aa7bd' text-anchor='middle' font-family='sans-serif'>Violation snapshot</text>
+    </svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(svg);
+  }
+
+  // Simulated backend: emits counts + occasional violations
+  let simRunning = true;
+  let simTimer = null;
+  function startSimulator(){
+    if (simTimer) clearInterval(simTimer);
+    simTimer = setInterval(() => {
+      if (!simRunning) return;
+      // random counts per lane
+      lanes.forEach(l => {
+        const c = state.counts[l];
+        // fluctuate counts
+        c.car = Math.max(0, c.car + Math.round((Math.random()-0.4)*3));
+        c.bike = Math.max(0, c.bike + Math.round((Math.random()-0.6)*2));
+        c.bus = Math.max(0, c.bus + (Math.random()>0.95?1:0));
+        // cap
+        c.car = Math.min(18, c.car);
+        c.bike = Math.min(12, c.bike);
+        c.bus = Math.min(3, c.bus);
+      });
+
+      // occasionally generate a violation while red
+      if (Math.random() < 0.18) {
+        // pick a lane that is not green
+        const redLanes = lanes.filter(l => l !== state.currentLane);
+        const lane = redLanes[Math.floor(Math.random()*redLanes.length)];
+        const plate = fakePlate();
+        const payload = { type:'violation', lane, plate, ts: nowSec(), img: placeholderImageDataURL(), confidence: Math.round(60 + Math.random() * 35) };
+        handleMessage(payload);
+      }
+
+      // emit counts messages
+      lanes.forEach(l => {
+        const msg = { type:'counts', lane: l, counts: state.counts[l], ts: nowSec() };
+        handleMessage(msg);
+      });
+
+    }, 1800);
+  }
+
+  function fakePlate(){
+    const states = ['KA','DL','MH','TN','WB','KL','AP'];
+    const r = states[Math.floor(Math.random()*states.length)];
+    const num = Math.floor(10 + Math.random()*90);
+    const letters = String.fromCharCode(65 + Math.floor(Math.random()*26)) + String.fromCharCode(65 + Math.floor(Math.random()*26));
+    const digits = (''+Math.floor(1000 + Math.random()*9000));
+    return `${r}${num}${letters}${digits}`;
+  }
+
+  // WebSocket wiring (optional)
+  let ws = null;
+  function connectWS(url){
+    // close previous
+    if (ws) {
+      try { ws.close(); } catch(e){}
+      ws = null;
+    }
+    try {
+      ws = new WebSocket(url);
+    } catch(e) {
+      console.error('WS connect failed',e);
+      refs.statusWS.textContent = 'WS error';
+      return;
+    }
+    refs.statusWS.textContent = 'Connecting...';
+    ws.onopen = () => {
+      refs.statusWS.textContent = 'Connected';
+      state.wsConnected = true;
+      // optional authentication/subscribe message
+      // ws.send(JSON.stringify({action:'subscribe',camera:'crossroad-1'}));
+    };
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        handleMessage(msg);
+      } catch(e){
+        console.warn('invalid ws data', e);
+      }
+    };
+    ws.onclose = () => {
+      refs.statusWS.textContent = 'Disconnected';
+      state.wsConnected = false;
+    };
+    ws.onerror = (e) => {
+      refs.statusWS.textContent = 'WS error';
+      console.error('ws error', e);
+    };
+  }
+
+  // handle incoming messages (counts and violations)
+  function handleMessage(msg){
+    if (!msg || !msg.type) return;
+    if (msg.type === 'counts') {
+      const lane = msg.lane;
+      if (lane && state.counts[lane]) {
+        state.counts[lane] = Object.assign({}, state.counts[lane], msg.counts || {});
+      }
+    } else if (msg.type === 'violation') {
+      addViolation(msg);
+    }
+    // if message includes command e.g. 'switch'
+    else if (msg.type === 'command' && msg.cmd === 'switch' && lanes.includes(msg.lane)) {
+      switchToLane(msg.lane);
+    }
+    // render after processing
+    renderUI();
+  }
+
+  // UI Actions
+  document.getElementById('btnToggleSim').addEventListener('click', e => {
+    simRunning = !simRunning;
+    e.target.textContent = simRunning ? 'Pause Sim' : 'Resume Sim';
+    refs.statusWS.textContent = simRunning ? 'Simulator' : 'Simulator (paused)';
+  });
+
+  document.getElementById('btnOpenCamera').addEventListener('click', async () => {
+    // open local webcam (user media)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio:false });
+      refs.liveVideo.srcObject = stream;
+      refs.modelVer.textContent = 'YOLO: (simulated)'; // replace when integrating real YOLO overlays
+    } catch (err) {
+      alert('Unable to open webcam: ' + err.message);
+    }
+  });
+
+  document.getElementById('btnFakeViolation').addEventListener('click', () => {
+    addViolation({ lane: lanes[Math.floor(Math.random()*lanes.length)], plate: fakePlate(), img: placeholderImageDataURL(), ts: nowSec(), confidence: Math.round(70+Math.random()*20) });
+  });
+
+  document.getElementById('btnExportCSV').addEventListener('click', exportViolationsCSV);
+
+  document.getElementById('btnManualSkip').addEventListener('click', () => {
+    const idx = lanes.indexOf(state.currentLane);
+    const next = lanes[(idx+1) % lanes.length];
+    switchToLane(next);
+  });
+
+  document.getElementById('btnToggleManual').addEventListener('click', (e) => {
+    state.manualOverride = !state.manualOverride;
+    e.target.textContent = state.manualOverride ? 'Exit Manual' : 'Manual Override';
+    e.target.classList.toggle('warn', state.manualOverride);
+    // when manual, maintain current timer but stop auto-switching
+    renderUI();
+  });
+
+  document.getElementById('btnSaveSettings').addEventListener('click', () => {
+    const minv = parseInt(refs.minGreen.value) || 5;
+    const maxv = parseInt(refs.maxGreen.value) || 40;
+    state.minGreen = Math.max(3, Math.min(300, minv));
+    state.maxGreen = Math.max(state.minGreen, Math.min(600, maxv));
+    state.emptyEarly = refs.emptyEarly.checked;
+    alert('Settings saved');
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    // reset counts and state
+    state.counts = { A:{car:0,bike:0,bus:0}, B:{car:0,bike:0,bus:0}, C:{car:0,bike:0,bus:0} };
+    state.violations = [];
+    state.currentLane = 'A';
+    state.timer = 20;
+    renderUI();
+  });
+
+  document.getElementById('btnConnectWS').addEventListener('click', () => {
+    const url = document.getElementById('wsUrl').value.trim();
+    if (!url) { alert('Enter WebSocket URL'); return; }
+    connectWS(url);
+  });
+
+  // Export helper for console access
+  window.smartTraffic = {
+    state,
+    connectWS,
+    addViolation,
+    switchToLane,
+    handleMessage
+  };
+
+  // initial setup
+  function init(){
+    // seed counts a bit
+    state.counts.A.car=8; state.counts.A.bike=3;
+    state.counts.B.car=5; state.counts.B.bike=4;
+    state.counts.C.car=2; state.counts.C.bike=1; state.counts.C.bus=1;
+
+    renderUI();
+    startSimulator();
+    startClock();
+    // initial switch
+    switchToLane(state.currentLane);
+  }
+
+  init();
+
+})();
+</script>
+</body>
+</html>

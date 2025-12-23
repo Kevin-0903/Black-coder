@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SmartTraffic AI — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6f7;
+    --card:#ffffff;
+    --ink:#111214;
+    --muted:#7b8186;
+    --accent:#111214; /* monochrome by default; replace to brand */
+    --glass: rgba(17,18,20,0.06);
+    --radius:12px;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;color:var(--ink)}
+  a{color:inherit;text-decoration:none}
+  .center-wrap{
+    min-height:100vh;
+    display:grid;
+    place-items:center;
+    padding:28px;
+  }
+  .card{
+    width:100%;
+    max-width:420px;
+    border-radius:14px;
+    background:var(--card);
+    box-shadow: 0 8px 28px rgba(17,18,20,0.06);
+    padding:28px;
+    border:1px solid var(--glass);
+  }
+
+  /* Header */
+  .brand{
+    display:flex;gap:12px;align-items:center;margin-bottom:18px;
+  }
+  .logo{
+    width:56px;height:56px;border-radius:10px;border:1px solid var(--glass);
+    display:grid;place-items:center;font-weight:800;font-size:18px;background:linear-gradient(180deg,#fff,#fafafa);
+    color:var(--ink);
+  }
+  .brand-text{display:flex;flex-direction:column;line-height:1;}
+  .brand-text .title{font-weight:700;font-size:18px}
+  .brand-text .sub{font-size:13px;color:var(--muted);margin-top:2px}
+
+  /* form */
+  form { display:flex;flex-direction:column;gap:12px; }
+  label{font-size:13px;font-weight:600;margin-bottom:6px;display:block}
+  .field{
+    display:flex;flex-direction:column;gap:6px;
+  }
+  input[type="email"],
+  input[type="password"]{
+    width:100%;
+    padding:12px 12px;
+    border-radius:10px;
+    border:1px solid #e6e7e8;
+    background:transparent;
+    font-size:14px;
+    color:var(--ink);
+    outline:none;
+    transition:box-shadow .12s, border-color .12s;
+  }
+  input:focus{
+    border-color:var(--accent);
+    box-shadow:0 6px 18px rgba(17,18,20,0.04);
+  }
+
+  .row { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+  .checkbox{
+    display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+  }
+  .link{font-size:13px;color:var(--muted)}
+
+  .btn {
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid var(--glass);
+    background:var(--ink);
+    color:#fff;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+  }
+  .btn.secondary {
+    background:transparent;color:var(--ink);border-style:dashed;font-weight:700;
+  }
+
+  .divider {
+    display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:8px 0;
+  }
+  .divider:before,.divider:after{content:"";height:1px;background:#efefef;flex:1;border-radius:2px}
+
+  .socials{display:flex;gap:8px}
+  .socials button{
+    flex:1;padding:10px;border-radius:8px;border:1px solid var(--glass);background:transparent;font-weight:700;font-size:13px;
+  }
+
+  .foot{
+    margin-top:12px;text-align:center;font-size:13px;color:var(--muted)
+  }
+
+  /* small helper for password toggle icon */
+  .pw-wrap{position:relative}
+  .pw-toggle{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:6px;border-radius:6px;
+  }
+
+  /* responsive */
+  @media (max-width:480px){
+    .card{padding:18px;margin:6px}
+    .logo{width:48px;height:48px}
+  }
+</style>
+</head>
+<body>
+  <div class="center-wrap" aria-live="polite">
+    <main class="card" role="main" aria-labelledby="login-title">
+      <header class="brand" aria-hidden="false">
+        <div class="logo" aria-hidden="true">STA</div>
+        <div class="brand-text">
+          <div class="title">SmartTraffic AI</div>
+          <div class="sub">AI camera-based junction management</div>
+        </div>
+      </header>
+
+      <h1 id="login-title" style="font-size:20px;margin:6px 0 2px 0;">Sign in to your account</h1>
+      <p style="margin:0 0 14px 0;color:var(--muted);font-size:13px;">Enter your credentials to access the admin dashboard.</p>
+
+      <!-- Replace action with your backend endpoint -->
+      <form id="loginForm" action="/auth/login" method="POST" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required>
+        </div>
+
+        <div class="field pw-wrap">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required minlength="6">
+          <button type="button" class="pw-toggle" id="togglePw" aria-label="Show password">Show</button>
+        </div>
+
+        <div class="row" style="margin-top:6px;">
+          <label class="checkbox"><input type="checkbox" name="remember" aria-label="Remember me"> Remember me</label>
+          <a class="link" href="#" onclick="event.preventDefault();alert('Password recovery flow (placeholder)')">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">Sign in</button>
+
+        <div class="divider" aria-hidden="true">or continue</div>
+
+        <div class="socials" aria-hidden="true">
+          <button type="button" class="btn secondary" title="Sign in with Google">Google</button>
+          <button type="button" class="btn secondary" title="Sign in with SSO">SSO</button>
+        </div>
+
+        <div class="foot" style="margin-top:14px;">
+          <span style="font-size:13px;color:var(--muted)">Don't have an account?</span>
+          <a href="#" style="font-weight:700;margin-left:8px;" onclick="event.preventDefault();alert('Sign up flow placeholder')">Create account</a>
+        </div>
+      </form>
+
+      <footer style="margin-top:18px;border-top:1px solid #f0f0f0;padding-top:12px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;">
+        <div>© 2025 SmartTraffic AI</div>
+        <div style="text-align:right">
+          <a href="#" style="color:var(--muted);font-size:13px;margin-right:10px;" onclick="event.preventDefault();alert('Contact placeholder')">Contact</a>
+          <a href="#" style="color:var(--muted);font-size:13px" onclick="event.preventDefault();alert('Privacy placeholder')">Privacy</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+<script>
+  // Small UX helpers — optional. Remove script tag if you want a pure static mock.
+  (function(){
+    const toggle = document.getElementById('togglePw');
+    const pwd = document.getElementById('password');
+    toggle.addEventListener('click', () => {
+      const isHidden = pwd.type === 'password';
+      pwd.type = isHidden ? 'text' : 'password';
+      toggle.textContent = isHidden ? 'Hide' : 'Show';
+      toggle.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+    });
+
+    // Basic client-side validation + demo submit behavior
+    const form = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('submitBtn');
+    form.addEventListener('submit', (e) => {
+      // simple validation
+      if (!form.checkValidity()) {
+        // let browser show validation UI
+        return;
+      }
+      // For demo docs: prevent actual submit and show placeholder
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+      // Simulate server roundtrip
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign in';
+        // In real app: redirect to dashboard on success
+        alert('Demo login successful — replace with real auth flow.');
+      }, 900);
+    });
+  })();
+</script>
+</body>
+</html>

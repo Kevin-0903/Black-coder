@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Traffic AI — UI Mockup (Static)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* -------------------------
+     Design tokens / variables
+     ------------------------- */
+  :root{
+    --bg-1: #071022;
+    --bg-2: #041018;
+    --card: #0b1220;
+    --muted: #9aa7bd;
+    --accent: #00c2a8;
+    --glass: rgba(255,255,255,0.03);
+    --glass-border: rgba(255,255,255,0.04);
+    --green: #28c76f;
+    --yellow:#ffd166;
+    --red: #ef476f;
+    --radius: 12px;
+    --max-width: 1200px;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: #e6eef8;
+  }
+
+  /* -------------------------
+     Global layout
+     ------------------------- */
+  html,body{height:100%;margin:0;background:
+    radial-gradient(800px 400px at 10% 10%, rgba(0,194,168,0.06), transparent),
+    linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  }
+  .container{
+    max-width:var(--max-width);
+    margin:28px auto;
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:20px;
+    padding:20px;
+  }
+  .panel{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow: 0 8px 20px rgba(2,6,23,0.6);
+  }
+
+  /* -------------------------
+     Left column - Live feed + lanes
+     ------------------------- */
+  .video-card{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    min-height:420px;
+  }
+  .video-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .video-header h1{font-size:18px;margin:0;}
+  .video-meta{color:var(--muted);font-size:13px;}
+
+  .live-area{
+    display:flex;
+    gap:12px;
+  }
+  .live-video{
+    flex:1;
+    background:linear-gradient(180deg,#08121a,#041018);
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.02);
+    min-height:320px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .live-video .placeholder{
+    width:100%;
+    height:100%;
+    display:grid;
+    place-items:center;
+    color:var(--muted);
+    font-weight:700;
+    font-size:16px;
+  }
+  .overlay-badge{
+    position:absolute;
+    left:12px;top:12px;
+    background:rgba(0,0,0,0.45);
+    padding:6px 10px;border-radius:8px;font-size:13px;color:#fff;
+  }
+
+  .right-controls{
+    width:300px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .small-card{
+    background:transparent;border:1px solid var(--glass-border);
+    border-radius:8px;padding:10px;
+  }
+  .muted { color:var(--muted); font-size:13px; }
+
+  /* -------------------------
+     Lane cards (below video)
+     ------------------------- */
+  .lanes{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:12px;
+    margin-top:12px;
+  }
+  .lane{
+    padding:12px;border-radius:10px;background:var(--card);border:1px solid var(--glass-border);
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .lane .title{font-weight:700;font-size:14px;}
+  .lane .counts{color:var(--muted);font-size:13px;}
+  .progress{height:12px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.02);}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#27a58f);width:48%;}
+  .signal-pill{display:flex;gap:8px;align-items:center;font-weight:700;}
+  .dot{width:14px;height:14px;border-radius:50%;background:#2b3440;border:1px solid rgba(255,255,255,0.03);}
+
+  /* -------------------------
+     Right column - timer + violations
+     ------------------------- */
+  .right-grid{display:grid;grid-template-rows:auto auto 1fr;gap:16px;}
+  .center-card{display:flex;align-items:center;gap:16px;padding:16px;border-radius:10px;}
+  .timer-circle{width:140px;height:140px;border-radius:50%;border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);flex-direction:column;}
+  .timer-number{font-weight:900;font-size:36px;}
+  .traffic-breakdown{display:flex;gap:8px;margin-top:12px;}
+  .stat{flex:1;background:var(--glass);padding:10px;border-radius:8px;border:1px solid var(--glass-border);text-align:center;}
+  .stat .num{font-weight:800;font-size:18px;}
+
+  /* -------------------------
+     Violations list
+     ------------------------- */
+  .violations{display:flex;flex-direction:column;gap:10px;}
+  .vio-item{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);border:1px solid rgba(255,255,255,0.02);}
+  .vio-thumb{width:120px;height:76px;background:#0d1722;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;}
+  .vio-meta{flex:1;display:flex;flex-direction:column;gap:6px;}
+  .plate{font-weight:800;font-size:15px;}
+  .vio-actions{display:flex;flex-direction:column;gap:8px;}
+
+  /* -------------------------
+     Settings / integration card
+     ------------------------- */
+  .integration pre{background:rgba(255,255,255,0.02);padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-size:12px;color:var(--muted);overflow:auto;}
+
+  /* -------------------------
+     Responsive
+     ------------------------- */
+  @media (max-width:1000px){
+    .container{grid-template-columns: 1fr; padding:14px;}
+    .lanes{grid-template-columns: repeat(2,1fr);}
+    .right-controls{width:240px;}
+  }
+  @media (max-width:640px){
+    .lanes{grid-template-columns:1fr;}
+    .right-controls{width:100%;}
+  }
+
+  /* small helper for labels used in docs */
+  .annot {
+    display:inline-block;background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);
+    color:var(--muted);font-size:12px;
+  }
+</style>
+</head>
+<body>
+  <div class="container" role="main" aria-label="Smart Traffic UI mockup (static)">
+
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="panel video-card" aria-hidden="false">
+        <div class="video-header">
+          <div>
+            <h1>📷 Live Camera Feed</h1>
+            <div class="video-meta">AI: YOLO (vehicle detection) — static mockup</div>
+          </div>
+          <div class="annot">Prototype • Static</div>
+        </div>
+
+        <div class="live-area">
+          <div class="live-video" aria-label="Live camera placeholder">
+            <div class="overlay-badge">Model: YOLO • FPS: —</div>
+            <div class="placeholder">
+              Live camera feed placeholder
+              <div style="font-weight:400;font-size:13px;color:var(--muted);margin-top:8px;">(Replace with live stream in implementation)</div>
+            </div>
+          </div>
+
+          <aside class="right-controls" aria-label="controls and summary">
+            <div class="small-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:800;">Current Green</div>
+                  <div class="muted">Lane A — Northbound</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="signal-pill"><span class="dot" style="background:var(--green);box-shadow:0 0 10px rgba(40,199,111,0.12);"></span><span style="font-weight:800;">GREEN</span></div>
+                  <div class="muted" style="font-size:12px;margin-top:6px;">Timer: 22s</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="small-card">
+              <div style="font-weight:800;margin-bottom:6px;">Mode</div>
+              <div class="muted">Adaptive — proportional green time by vehicle count</div>
+            </div>
+
+            <div class="small-card">
+              <div style="font-weight:800;margin-bottom:6px;">Settings (mock)</div>
+              <div class="muted" style="display:flex;justify-content:space-between;">
+                <span>Min green</span><strong>8s</strong>
+              </div>
+              <div class="muted" style="display:flex;justify-content:space-between;margin-top:6px;">
+                <span>Max green</span><strong>40s</strong>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Lane cards (static) -->
+        <div class="lanes" aria-label="Lane summaries">
+          <div class="lane" id="laneA">
+            <div class="title">Lane A — Northbound</div>
+            <div class="counts">Cars 12 • Bikes 6 • Buses 1</div>
+            <div class="progress" aria-hidden="true"><i style="width:78%"></i></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="muted">Priority</div><div style="font-weight:800;color:var(--green);">High</div>
+            </div>
+          </div>
+
+          <div class="lane" id="laneB">
+            <div class="title">Lane B — Eastbound</div>
+            <div class="counts">Cars 6 • Bikes 4 • Buses 0</div>
+            <div class="progress"><i style="width:48%"></i></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="muted">Priority</div><div style="font-weight:800;color:#ffd166;">Medium</div>
+            </div>
+          </div>
+
+          <div class="lane" id="laneC">
+            <div class="title">Lane C — Westbound</div>
+            <div class="counts">Cars 2 • Bikes 1 • Buses 0</div>
+            <div class="progress"><i style="width:12%"></i></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="muted">Priority</div><div style="font-weight:800;color:var(--muted);">Low</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;" class="muted">Notes: This is a **layout-only mockup** — no detection, no timers, no WebSocket. Use this for requirements & documentation screens.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-grid">
+
+      <!-- Timer / stats -->
+      <div class="panel center-card">
+        <div class="timer-circle" aria-hidden="true">
+          <div class="timer-number">22</div>
+          <div class="muted" style="font-size:13px;">seconds</div>
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:800;">Lane A — Green</div>
+              <div class="muted">Last switch: 10:24 PM</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="muted">Throughput</div>
+              <div style="font-weight:800;font-size:20px;">180 v/h</div>
+            </div>
+          </div>
+
+          <div class="traffic-breakdown">
+            <div class="stat"><div class="muted">Cars</div><div class="num">20</div></div>
+            <div class="stat"><div class="muted">Bikes</div><div class="num">11</div></div>
+            <div class="stat"><div class="muted">Buses</div><div class="num">2</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Violations -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:800;">Violations</div>
+            <div class="muted" style="font-size:13px;">Captured when vehicle crosses stop-line during red</div>
+          </div>
+          <div class="annot">UI only</div>
+        </div>
+
+        <div style="margin-top:12px;" class="violations" aria-label="violations list">
+          <div class="vio-item">
+            <div class="vio-thumb">IMG</div>
+            <div class="vio-meta">
+              <div class="plate">KA01AB1234</div>
+              <div class="muted">Lane B • 2025-12-02 10:24</div>
+              <div class="muted">OCR confidence: 92%</div>
+            </div>
+            <div class="vio-actions">
+              <button style="padding:6px 8px;border-radius:6px;border:1px solid var(--glass-border);background:transparent;color:var(--muted);">Download</button>
+              <button style="padding:6px 8px;border-radius:6px;border:1px solid rgba(255,107,107,0.12);background:transparent;color:var(--red);">Delete</button>
+            </div>
+          </div>
+
+          <div class="vio-item">
+            <div class="vio-thumb">IMG</div>
+            <div class="vio-meta">
+              <div class="plate">MH14CD5678</div>
+              <div class="muted">Lane C • 2025-12-02 09:58</div>
+              <div class="muted">OCR confidence: 88%</div>
+            </div>
+            <div class="vio-actions">
+              <button style="padding:6px 8px;border-radius:6px;border:1px solid var(--glass-border);background:transparent;color:var(--muted);">Download</button>
+              <button style="padding:6px 8px;border-radius:6px;border:1px solid:rgba(255,107,107,0.12);background:transparent;color:var(--red);">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integration / settings (static) -->
+      <div class="panel integration">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:800;">System Integration (notes)</div>
+          <div class="muted">Design doc</div>
+        </div>
+
+        <div style="margin-top:10px;" class="muted">
+          Use these placeholders in documentation to describe incoming messages and UI behaviour.
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="muted">Example JSON messages (documentation only):</div>
+          <pre>
+{ "type":"counts", "lane":"A", "counts": { "car":12,"bike":5,"bus":1 }, "ts":1700000000 }
+{ "type":"violation", "lane":"B", "img":"data:image/jpeg;base64,...", "plate":"KA01AB1234", "ts":1700000012 }
+          </pre>
+        </div>
+
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+          <div class="muted">WebSocket URL (example)</div>
+          <div style="background:rgba(255,255,255,0.02);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-weight:700;">wss://your-backend/ws</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer style="text-align:center;color:var(--muted);font-size:12px;margin-bottom:28px;">
+    Smart Traffic UI — Static mockup for documentation • Replace placeholders when implementing the system.
+  </footer>
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SmartTraffic AI — Officer Flow Mock</title>
+
+<!-- Optional font, keep or remove -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #f6f6f6;
+    --panel:#ffffff;
+    --ink:#111216;
+    --muted:#75797d;
+    --glass: rgba(0,0,0,0.06);
+    --radius:12px;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+  /* App layout container */
+  .app {
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+  }
+
+  /* COMMON PANELS */
+  .card {
+    background:var(--panel);
+    border-radius:var(--radius);
+    border:1px solid var(--glass);
+    box-shadow: 0 8px 24px rgba(12,14,16,0.04);
+  }
+
+  /* -----------------------
+     LOGIN SCREEN
+     ----------------------- */
+  .login-wrap {
+    width:420px;
+    padding:30px;
+  }
+  .brand {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .logo {
+    width:64px;height:64px;border-radius:10px;border:1px solid var(--glass);display:grid;place-items:center;font-weight:800;font-size:18px;
+    background:linear-gradient(180deg,#fff,#fbfbfb)
+  }
+  .brand h1 { margin:0;font-size:18px; }
+  .brand p { margin:2px 0 0 0;color:var(--muted);font-size:13px }
+
+  .login-form { display:flex;flex-direction:column;gap:12px }
+  label{font-size:13px;font-weight:700;color:var(--ink)}
+  input[type=text], input[type=password] {
+    width:100%;padding:12px;border-radius:10px;border:1px solid #e4e4e4;font-size:14px;background:transparent;
+  }
+  .row { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+  .btn {
+    padding:12px 14px;border-radius:10px;border:1px solid var(--glass);background:var(--ink);color:#fff;font-weight:700;cursor:pointer;
+  }
+  .btn.ghost { background:transparent;color:var(--ink) }
+  .muted { color:var(--muted); font-size:13px; }
+
+  .note {
+    margin-top:12px;color:var(--muted);font-size:13px;text-align:center;
+  }
+
+  /* -----------------------
+     DASHBOARD LAYOUT
+     ----------------------- */
+  .dashboard {
+    max-width:1200px;
+    width:100%;
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    gap:18px;
+    align-items:start;
+  }
+
+  header.topbar {
+    grid-column:1 / -1;
+    display:flex;justify-content:space-between;align-items:center;padding:14px;border-radius:10px;background:var(--panel);border:1px solid var(--glass);
+  }
+  header .brand-mini { display:flex;gap:12px;align-items:center }
+  header .brand-mini .logo { width:44px;height:44px;font-size:14px }
+  header nav { display:flex;gap:10px;align-items:center }
+  header nav .link { font-weight:700;color:var(--muted);font-size:13px;padding:8px 10px;border-radius:8px }
+  header .controls { display:flex;gap:10px;align-items:center }
+
+  /* Left main column */
+  .main-left {
+    display:flex;flex-direction:column;gap:12px;
+  }
+
+  .live-card {
+    display:grid;grid-template-columns: 1fr 320px;gap:12px;padding:12px;border-radius:10px;background:var(--panel);border:1px solid var(--glass);
+  }
+  .live-preview {
+    border-radius:8px;border:1px dashed var(--glass);background:linear-gradient(180deg,#fff,#fafafa);min-height:360px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:12px;
+  }
+  .overlay {
+    position:absolute;right:12px;top:12px;background:rgba(255,255,255,0.9);padding:6px 10px;border-radius:8px;border:1px solid var(--glass);font-weight:700;font-size:13px;
+  }
+
+  .side-mini {
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .stat { padding:12px;border-radius:8px;border:1px solid var(--glass);background:transparent;text-align:center }
+  .stat .num { font-weight:800;font-size:20px }
+  .stat .lbl { color:var(--muted);font-size:13px }
+
+  /* Lane cards */
+  .lanes-grid { display:grid;grid-template-columns: repeat(3,1fr);gap:12px }
+  .lane { padding:12px;border-radius:10px;border:1px solid var(--glass);background:var(--panel) }
+  .lane .title { font-weight:800;font-size:14px }
+  .lane .counts { color:var(--muted);margin-top:6px;font-size:13px }
+  .progress { height:10px;background:#fafafa;border-radius:8px;margin-top:10px;border:1px solid #eee;overflow:hidden }
+  .progress > i { display:block;height:100%;background:linear-gradient(90deg,#dcdcdc,#bfbfbf);width:40% }
+
+  /* Current green / timer */
+  .current-card { padding:12px;border-radius:10px;border:1px solid var(--glass);background:var(--panel);display:flex;align-items:center;justify-content:space-between }
+  .timer { font-size:34px;font-weight:900 }
+  .current-meta { color:var(--muted);font-size:13px }
+
+  /* Violations area */
+  .violations-card { padding:12px;border-radius:10px;border:1px solid var(--glass);background:var(--panel) }
+  .violation { display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;border:1px solid #f0f0f0;background:linear-gradient(180deg,#fff,#fafafa) }
+  .vio-thumb { width:96px;height:64px;border-radius:6px;background:#fafafa;border:1px solid #eee;display:grid;place-items:center;color:var(--muted);font-weight:700 }
+  .vio-meta .plate { font-weight:800 }
+  .vio-meta .sub { color:var(--muted);font-size:13px }
+
+  /* Right column */
+  .right-col { display:flex;flex-direction:column;gap:12px }
+  .panel { padding:12px;border-radius:10px;border:1px solid var(--glass);background:var(--panel) }
+  .profile { display:flex;gap:12px;align-items:center }
+  .avatar { width:64px;height:64px;border-radius:10px;border:1px solid var(--glass);display:grid;place-items:center;font-weight:800;background:#fff }
+  .profile .meta { display:flex;flex-direction:column }
+  .meta .name { font-weight:800 }
+  .meta .role { color:var(--muted);font-size:13px }
+
+  .controls-col { display:flex;gap:8px;flex-wrap:wrap }
+  .small { padding:8px 10px;border-radius:8px;border:1px solid var(--glass);background:transparent;font-weight:700;cursor:pointer }
+
+  .footer {
+    grid-column:1 / -1;
+    padding:12px;border-radius:10px;background:var(--panel);border:1px solid var(--glass);text-align:center;color:var(--muted);font-size:13px;
+  }
+
+  /* Responsive */
+  @media (max-width:980px){
+    .dashboard { grid-template-columns: 1fr; }
+    .live-card { grid-template-columns: 1fr; }
+    .lanes-grid { grid-template-columns: repeat(2,1fr); }
+  }
+  @media (max-width:640px){
+    .lanes-grid { grid-template-columns: 1fr; }
+    .brand h1 { font-size:16px }
+  }
+
+  /* small animation */
+  .fade-in { animation: fadeIn .28s ease both; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px) } to { opacity:1; transform:none } }
+
+  /* accessibility focus */
+  button:focus, [role="button"]:focus, a:focus { outline: 3px solid rgba(0,0,0,0.06); border-radius:8px }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- LOGIN CARD (shown initially) -->
+  <div id="loginScreen" class="card login-wrap fade-in" role="region" aria-labelledby="loginTitle">
+    <div class="brand" aria-hidden="false">
+      <div class="logo">STA</div>
+      <div>
+        <h1 id="loginTitle">Officer Sign in</h1>
+        <p class="muted">Access restricted to authorized traffic officers</p>
+      </div>
+    </div>
+
+    <form id="loginForm" class="login-form" onsubmit="return false;">
+      <div>
+        <label for="officerId">Officer Username</label>
+        <input id="officerId" name="officerId" type="text" placeholder="e.g. officer.john" aria-required="true" required>
+      </div>
+
+      <div>
+        <label for="officerPwd">Password</label>
+        <input id="officerPwd" name="officerPwd" type="password" placeholder="Enter your password" aria-required="true" required>
+      </div>
+
+      <div class="row">
+        <label class="muted"><input id="remember" type="checkbox"> Remember me</label>
+        <a href="#" class="muted" id="forgotLink">Forgot?</a>
+      </div>
+
+      <div class="row" style="margin-top:6px;">
+        <button id="signInBtn" class="btn" type="submit">Sign in</button>
+        <button id="demoBtn" class="btn ghost" type="button" title="Demo sign-in">Demo</button>
+      </div>
+
+      <div class="note">By signing in you agree to system access policies. This is a mock for documentation/demo only.</div>
+    </form>
+  </div>
+
+  <!-- DASHBOARD (hidden initially) -->
+  <div id="dashboardScreen" class="dashboard" style="display:none;opacity:0;">
+    <header class="topbar fade-in" role="banner">
+      <div class="brand-mini">
+        <div class="logo">STA</div>
+        <div>
+          <div style="font-weight:800">SmartTraffic AI</div>
+          <div class="muted" style="font-size:13px">Officer Dashboard</div>
+        </div>
+      </div>
+
+      <nav aria-label="top navigation">
+        <span class="link">Overview</span>
+        <span class="link">Analytics</span>
+        <span class="link">Violations</span>
+        <span class="link">Settings</span>
+      </nav>
+
+      <div class="controls">
+        <div class="muted">Officer: <strong id="officerDisplay">—</strong></div>
+        <button id="logoutBtn" class="small" title="Sign out">Logout</button>
+      </div>
+    </header>
+
+    <!-- LEFT -->
+    <section class="main-left">
+
+      <!-- live feed + right mini -->
+      <div class="live-card">
+        <div class="live-preview" aria-label="Live camera feed placeholder">
+          <div style="text-align:center">
+            <div style="font-weight:800;font-size:16px;margin-bottom:8px;">Live Camera Feed</div>
+            <div class="muted" style="font-size:13px;margin-bottom:12px;">(placeholder — replace with stream in implementation)</div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:6px;">
+            <button class="small" id="attachCam">Attach camera</button>
+            <button class="small" id="toggleAuto">Auto Mode: ON</button>
+            <button class="small" id="simulateVio">Simulate Violation</button>
+          </div>
+        </div>
+
+        <aside class="side-mini" aria-hidden="false">
+          <div class="stat">
+            <div class="num" id="totVehicles">0</div>
+            <div class="lbl">Total Vehicles</div>
+          </div>
+          <div class="stat">
+            <div class="num" id="totViolations">0</div>
+            <div class="lbl">Violations</div>
+          </div>
+          <div class="stat">
+            <div class="num" id="uptime">99%</div>
+            <div class="lbl">System Health</div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- lanes row -->
+      <div style="margin-top:12px" class="lanes-grid" aria-label="lane counts">
+        <div class="lane">
+          <div class="title">Lane A — Northbound</div>
+          <div class="counts muted" id="laneAcounts">Cars 0 • Bikes 0 • Buses 0</div>
+          <div class="progress"><i id="laneAbar" style="width:10%"></i></div>
+        </div>
+        <div class="lane">
+          <div class="title">Lane B — Eastbound</div>
+          <div class="counts muted" id="laneBcounts">Cars 0 • Bikes 0 • Buses 0</div>
+          <div class="progress"><i id="laneBbar" style="width:8%"></i></div>
+        </div>
+        <div class="lane">
+          <div class="title">Lane C — Westbound</div>
+          <div class="counts muted" id="laneCcounts">Cars 0 • Bikes 0 • Buses 0</div>
+          <div class="progress"><i id="laneCbar" style="width:6%"></i></div>
+        </div>
+      </div>
+
+      <!-- current green + timer -->
+      <div style="margin-top:12px" class="current-card">
+        <div>
+          <div style="font-weight:800">Current Green: <span id="currentLane">Lane A</span></div>
+          <div class="current-meta">Automatically allocated by adaptive controller</div>
+        </div>
+        <div style="text-align:right">
+          <div class="timer" id="timerNumber">22s</div>
+          <div class="muted" style="font-size:13px">Countdown</div>
+        </div>
+      </div>
+
+      <!-- violations list -->
+      <div style="margin-top:12px" class="violations-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-weight:800">Violation Alerts</div>
+          <div class="muted" style="font-size:13px">Red-light crossings captured</div>
+        </div>
+
+        <div id="violationsList" style="display:flex;flex-direction:column;gap:10px;max-height:260px;overflow:auto">
+          <!-- populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="right-col">
+
+      <div class="panel profile">
+        <div class="avatar" id="avatar">OF</div>
+        <div class="meta">
+          <div class="name" id="officerName">Officer</div>
+          <div class="role muted" id="officerRole">Traffic Enforcement</div>
+          <div style="margin-top:8px"><span class="muted">Badge:</span> <strong id="officerBadge">—</strong></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-weight:800">Quick Controls</div>
+          <div class="muted" style="font-size:13px">Demo-only</div>
+        </div>
+        <div class="controls-col">
+          <button id="btnSkip" class="small">Skip Lane</button>
+          <button id="btnPause" class="small">Pause Auto</button>
+          <button id="btnExport" class="small">Export CSV</button>
+          <button id="btnClear" class="small">Clear Violations</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="font-weight:800;margin-bottom:8px">Settings (mock)</div>
+        <div class="muted" style="font-size:13px;margin-bottom:8px">Green time range</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--glass);text-align:center">Min <br><strong id="minG">8s</strong></div>
+          <div style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--glass);text-align:center">Max <br><strong id="maxG">40s</strong></div>
+        </div>
+      </div>
+
+    </aside>
+
+    <div class="footer">SmartTraffic AI • Demo dashboard for officers • All data shown is simulated</div>
+  </div>
+
+</div>
+
+<script>
+/*
+  flow-mock.js — Simulated login → dashboard flow
+  - All behavior is client-side for documentation/demo purposes
+  - No external calls, no auth; the "Demo" button signs in automatically
+  - Simulates vehicle counts and violations
+*/
+
+(() => {
+  // Elements
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboardScreen = document.getElementById('dashboardScreen');
+  const signInBtn = document.getElementById('signInBtn');
+  const demoBtn = document.getElementById('demoBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const officerDisplay = document.getElementById('officerDisplay');
+
+  // Dashboard elements
+  const totVehicles = document.getElementById('totVehicles');
+  const totViolations = document.getElementById('totViolations');
+  const laneAcounts = document.getElementById('laneAcounts');
+  const laneBcounts = document.getElementById('laneBcounts');
+  const laneCcounts = document.getElementById('laneCcounts');
+  const laneAbar = document.getElementById('laneAbar');
+  const laneBbar = document.getElementById('laneBbar');
+  const laneCbar = document.getElementById('laneCbar');
+  const currentLaneEl = document.getElementById('currentLane');
+  const timerNumber = document.getElementById('timerNumber');
+  const violationsList = document.getElementById('violationsList');
+
+  const officerName = document.getElementById('officerName');
+  const officerBadge = document.getElementById('officerBadge');
+  const avatar = document.getElementById('avatar');
+  const btnSkip = document.getElementById('btnSkip');
+  const btnPause = document.getElementById('btnPause');
+  const btnExport = document.getElementById('btnExport');
+  const btnClear = document.getElementById('btnClear');
+  const simulateVio = document.getElementById('simulateVio');
+  const toggleAutoBtn = document.getElementById('toggleAuto');
+
+  // State
+  let state = {
+    signedIn: false,
+    officer: { username:'', name:'', badge:'' },
+    lanes: {
+      A: { car:8, bike:3, bus:0 },
+      B: { car:5, bike:2, bus:0 },
+      C: { car:2, bike:1, bus:0 }
+    },
+    currentLane: 'A',
+    timer: 22,
+    running: true,
+    violations: []
+  };
+
+  // Util
+  const now = () => Math.floor(Date.now()/1000);
+  function fmtTime(ts) { const d = new Date(ts*1000); return d.toLocaleString(); }
+
+  // UI helpers
+  function showDashboard() {
+    // populate officer header
+    officerDisplay.textContent = state.officer.username || state.officer.name || '—';
+    officerName.textContent = state.officer.name || 'Officer';
+    officerBadge.textContent = state.officer.badge || '0001';
+    avatar.textContent = (state.officer.name ? state.officer.name.split(' ').map(s=>s[0]).slice(0,2).join('') : 'OF');
+
+    // swap screens
+    loginScreen.style.display = 'none';
+    dashboardScreen.style.display = '';
+    // smooth reveal
+    setTimeout(()=> dashboardScreen.style.opacity = 1, 10);
+
+    // start timers
+    startTick();
+    renderAll();
+  }
+
+  function showLogin() {
+    dashboardScreen.style.display = 'none';
+    dashboardScreen.style.opacity = 0;
+    loginScreen.style.display = '';
+    // reset some UI
+    stopTick();
+  }
+
+  function renderAll() {
+    const s = state;
+    const totals = { car:0, bike:0, bus:0 };
+    Object.keys(s.lanes).forEach(l => {
+      totals.car += s.lanes[l].car;
+      totals.bike += s.lanes[l].bike;
+      totals.bus += s.lanes[l].bus;
+    });
+    totVehicles.textContent = totals.car + totals.bike + totals.bus;
+    totViolations.textContent = s.violations.length;
+
+    laneAcounts.textContent = `Cars ${s.lanes.A.car} • Bikes ${s.lanes.A.bike} • Buses ${s.lanes.A.bus}`;
+    laneBcounts.textContent = `Cars ${s.lanes.B.car} • Bikes ${s.lanes.B.bike} • Buses ${s.lanes.B.bus}`;
+    laneCcounts.textContent = `Cars ${s.lanes.C.car} • Bikes ${s.lanes.C.bike} • Buses ${s.lanes.C.bus}`;
+
+    // bars proportional
+    const max = Math.max(
+      s.lanes.A.car + s.lanes.A.bike + s.lanes.A.bus,
+      s.lanes.B.car + s.lanes.B.bike + s.lanes.B.bus,
+      s.lanes.C.car + s.lanes.C.bike + s.lanes.C.bus,
+      1
+    );
+    laneAbar.style.width = Math.round(((s.lanes.A.car + s.lanes.A.bike + s.lanes.A.bus)/max)*100) + '%';
+    laneBbar.style.width = Math.round(((s.lanes.B.car + s.lanes.B.bike + s.lanes.B.bus)/max)*100) + '%';
+    laneCbar.style.width = Math.round(((s.lanes.C.car + s.lanes.C.bike + s.lanes.C.bus)/max)*100) + '%';
+
+    currentLaneEl.textContent = `Lane ${s.currentLane}`;
+    timerNumber.textContent = `${s.timer}s`;
+
+    renderViolations();
+  }
+
+  function renderViolations() {
+    violationsList.innerHTML = '';
+    state.violations.slice().reverse().forEach((v, idx) => {
+      const el = document.createElement('div');
+      el.className = 'violation';
+      el.innerHTML = `
+        <div class="vio-thumb">IMG</div>
+        <div class="vio-meta" style="flex:1">
+          <div class="plate">${v.plate || 'UNKNOWN'}</div>
+          <div class="sub muted">${v.lane} • ${fmtTime(v.ts)}</div>
+        </div>
+        <div style="min-width:86px;text-align:right">
+          <div style="font-weight:800">${v.confidence || '—'}%</div>
+          <div class="muted" style="font-size:12px;margin-top:6px;"><button data-idx="${idx}" class="small" style="font-weight:700">Download</button></div>
+        </div>
+      `;
+      violationsList.appendChild(el);
+    });
+
+    // attach download handlers
+    Array.from(violationsList.querySelectorAll('button[data-idx]')).forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        const v = state.violations[state.violations.length - 1 - idx];
+        // demo download: create tiny text file that contains plate/time
+        const text = `Violation\nplate:${v.plate}\nlane:${v.lane}\nts:${v.ts}`;
+        const blob = new Blob([text], {type:'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `violation_${v.plate || 'unknown'}_${v.ts}.txt`; a.click();
+        URL.revokeObjectURL(url);
+      });
+    });
+  }
+
+  // Simulated tick (timer countdown + auto switch)
+  let tickHandle = null;
+  function startTick() {
+    if (tickHandle) return;
+    tickHandle = setInterval(() => {
+      if (!state.running) return;
+      if (state.timer > 0) {
+        state.timer--;
+      } else {
+        // pick next lane (simple: highest total vehicles)
+        const scores = Object.keys(state.lanes).map(l => {
+          const c = state.lanes[l];
+          return { lane:l, score: c.car + c.bike + c.bus };
+        }).sort((a,b)=>b.score-a.score);
+        const next = scores[0] ? scores[0].lane : (state.currentLane === 'A' ? 'B' : 'A');
+        // set timer proportional to vehicles (min 6, max 40)
+        const total = state.lanes[next].car + state.lanes[next].bike + state.lanes[next].bus;
+        state.currentLane = next;
+        state.timer = Math.max(6, Math.min(40, Math.round(total*3 + 6)));
+      }
+      // randomly adjust counts a little to simulate flow
+      fluctuateCounts();
+      renderAll();
+    }, 1000);
+  }
+
+  function stopTick() {
+    if (tickHandle) clearInterval(tickHandle);
+    tickHandle = null;
+  }
+
+  function fluctuateCounts() {
+    // small random fluctuation
+    Object.keys(state.lanes).forEach(l => {
+      const lane = state.lanes[l];
+      lane.car = Math.max(0, Math.min(20, lane.car + Math.round((Math.random()-0.45)*2)));
+      lane.bike = Math.max(0, Math.min(12, lane.bike + Math.round((Math.random()-0.6)*1)));
+      // rare bus events
+      if (Math.random() < 0.02) lane.bus = Math.min(3, lane.bus + 1);
+      else lane.bus = Math.max(0, lane.bus - (Math.random()<0.3?1:0));
+    });
+  }
+
+  // Violation simulation
+  function addViolation({ lane, plate, confidence }) {
+    const v = { lane, plate, confidence, ts: now() };
+    state.violations.push(v);
+    // cap
+    if (state.violations.length > 200) state.violations.shift();
+    renderAll();
+  }
+
+  // Demo helpers
+  function fakePlate(){
+    const s = ['KA','DL','MH','TN','WB','KL'];
+    return s[Math.floor(Math.random()*s.length)] + String(10 + Math.floor(Math.random()*89)) + String.fromCharCode(65+Math.floor(Math.random()*26)) + String.fromCharCode(65+Math.floor(Math.random()*26)) + (1000 + Math.floor(Math.random()*9000));
+  }
+
+  // Event wiring
+  signInBtn.addEventListener('click', () => {
+    const id = document.getElementById('officerId').value.trim();
+    const pwd = document.getElementById('officerPwd').value.trim();
+    if (!id || !pwd) {
+      alert('Please enter username and password (demo).');
+      return;
+    }
+    // mock auth validation (very simple)
+    if (pwd.length < 4) { alert('Password too short for demo'); return; }
+    // set officer info
+    state.signedIn = true;
+    state.officer.username = id;
+    state.officer.name = id.split('.')[1] ? id.split('.')[1].replace(/\b\w/g, c=>c.toUpperCase()) + ' Officer' : id;
+    state.officer.badge = 'B-' + (1000 + Math.floor(Math.random()*9000));
+    showDashboard();
+  });
+
+  demoBtn.addEventListener('click', () => {
+    // quick demo sign-in with preset officer
+    state.signedIn = true;
+    state.officer.username = 'officer.john';
+    state.officer.name = 'John Doe';
+    state.officer.badge = 'B-1024';
+    showDashboard();
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    // clear some state for demo
+    state.signedIn = false;
+    state.officer = { username:'', name:'', badge:'' };
+    state.violations = [];
+    state.timer = 22;
+    showLogin();
+  });
+
+  // Quick controls
+  btnSkip.addEventListener('click', () => {
+    const lanes = Object.keys(state.lanes);
+    const idx = lanes.indexOf(state.currentLane);
+    state.currentLane = lanes[(idx+1) % lanes.length];
+    state.timer = 12;
+    renderAll();
+  });
+  btnPause.addEventListener('click', (e) => {
+    state.running = !state.running;
+    e.currentTarget.textContent = state.running ? 'Pause Auto' : 'Resume Auto';
+  });
+  btnExport.addEventListener('click', () => {
+    // export violations as CSV
+    if (state.violations.length === 0) { alert('No violations to export'); return; }
+    const rows = [['ts','lane','plate','confidence']];
+    state.violations.forEach(v => rows.push([v.ts,v.lane,v.plate,v.confidence]));
+    const csv = rows.map(r => r.map(c => `"${(''+c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `violations_${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+  btnClear.addEventListener('click', () => {
+    if (!confirm('Clear all simulated violations?')) return;
+    state.violations = [];
+    renderAll();
+  });
+
+  simulateVio.addEventListener('click', () => {
+    const lane = ['A','B','C'][Math.floor(Math.random()*3)];
+    addViolation({ lane, plate: fakePlate(), confidence: 80 + Math.floor(Math.random()*18) });
+  });
+
+  document.getElementById('attachCam').addEventListener('click', () => {
+    alert('Attach camera — in real system, you would configure camera stream here. (Demo)');
+  });
+
+  toggleAutoBtn.addEventListener('click', (e) => {
+    state.running = !state.running;
+    e.currentTarget.textContent = `Auto Mode: ${state.running ? 'ON' : 'OFF'}`;
+  });
+
+  // small auto-violation generator to make demo lively (non-intrusive)
+  let autoVioInterval = setInterval(() => {
+    if (state.signedIn && Math.random() < 0.12) {
+      addViolation({ lane: ['A','B','C'][Math.floor(Math.random()*3)], plate: fakePlate(), confidence: 70 + Math.floor(Math.random()*28) });
+    }
+  }, 3500);
+
+  // initialize with login shown
+  showLogin();
+
+  // Safety: stop intervals when page unloads
+  window.addEventListener('beforeunload', () => { clearInterval(autoVioInterval); stopTick(); });
+
+})();
+</script>
+
+</body>
+</html>
